@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmEstudiantes));
             lblNuevoElemento = new Label();
             txtNuevoElemento = new TextBox();
             btnAgregarNuevo = new Button();
@@ -36,21 +37,22 @@
             lblCantidad = new Label();
             btnLimpiarLista = new Button();
             btnEditarSeleccionado = new Button();
+            btnAtras = new Button();
             SuspendLayout();
             // 
             // lblNuevoElemento
             // 
             lblNuevoElemento.AutoSize = true;
-            lblNuevoElemento.Location = new Point(22, 53);
+            lblNuevoElemento.Location = new Point(86, 134);
             lblNuevoElemento.Name = "lblNuevoElemento";
-            lblNuevoElemento.Size = new Size(95, 15);
+            lblNuevoElemento.Size = new Size(100, 15);
             lblNuevoElemento.TabIndex = 0;
-            lblNuevoElemento.Text = "Nuevo Elemento";
+            lblNuevoElemento.Text = "Nuevo Estudiante";
             lblNuevoElemento.Click += lblNuevoElemento_Click;
             // 
             // txtNuevoElemento
             // 
-            txtNuevoElemento.Location = new Point(123, 50);
+            txtNuevoElemento.Location = new Point(192, 134);
             txtNuevoElemento.MaxLength = 100;
             txtNuevoElemento.Name = "txtNuevoElemento";
             txtNuevoElemento.Size = new Size(100, 23);
@@ -59,18 +61,20 @@
             // 
             // btnAgregarNuevo
             // 
-            btnAgregarNuevo.Location = new Point(242, 50);
+            btnAgregarNuevo.BackgroundImage = (Image)resources.GetObject("btnAgregarNuevo.BackgroundImage");
+            btnAgregarNuevo.BackgroundImageLayout = ImageLayout.Stretch;
+            btnAgregarNuevo.Location = new Point(298, 134);
             btnAgregarNuevo.Name = "btnAgregarNuevo";
-            btnAgregarNuevo.Size = new Size(75, 23);
+            btnAgregarNuevo.Size = new Size(29, 21);
             btnAgregarNuevo.TabIndex = 2;
-            btnAgregarNuevo.Text = "Agregar";
             btnAgregarNuevo.UseVisualStyleBackColor = true;
             btnAgregarNuevo.Click += btnAgregarNuevo_Click;
             // 
             // lstListaNombres
             // 
+            lstListaNombres.BackColor = Color.DarkCyan;
             lstListaNombres.FormattingEnabled = true;
-            lstListaNombres.Location = new Point(22, 79);
+            lstListaNombres.Location = new Point(161, 163);
             lstListaNombres.Name = "lstListaNombres";
             lstListaNombres.Size = new Size(156, 139);
             lstListaNombres.TabIndex = 3;
@@ -78,18 +82,19 @@
             // 
             // btnEliminar
             // 
-            btnEliminar.Location = new Point(210, 79);
+            btnEliminar.BackgroundImage = (Image)resources.GetObject("btnEliminar.BackgroundImage");
+            btnEliminar.BackgroundImageLayout = ImageLayout.Stretch;
+            btnEliminar.Location = new Point(282, 396);
             btnEliminar.Name = "btnEliminar";
-            btnEliminar.Size = new Size(140, 23);
+            btnEliminar.Size = new Size(35, 28);
             btnEliminar.TabIndex = 4;
-            btnEliminar.Text = "Eliminar Seleccionado";
             btnEliminar.UseVisualStyleBackColor = true;
             btnEliminar.Click += btnEliminar_Click;
             // 
             // lblCantidad
             // 
             lblCantidad.AutoSize = true;
-            lblCantidad.Location = new Point(325, 456);
+            lblCantidad.Location = new Point(173, 305);
             lblCantidad.Name = "lblCantidad";
             lblCantidad.Size = new Size(134, 15);
             lblCantidad.TabIndex = 6;
@@ -98,7 +103,7 @@
             // 
             // btnLimpiarLista
             // 
-            btnLimpiarLista.Location = new Point(242, 134);
+            btnLimpiarLista.Location = new Point(340, 396);
             btnLimpiarLista.Name = "btnLimpiarLista";
             btnLimpiarLista.Size = new Size(75, 23);
             btnLimpiarLista.TabIndex = 7;
@@ -108,7 +113,7 @@
             // 
             // btnEditarSeleccionado
             // 
-            btnEditarSeleccionado.Location = new Point(210, 108);
+            btnEditarSeleccionado.Location = new Point(275, 367);
             btnEditarSeleccionado.Name = "btnEditarSeleccionado";
             btnEditarSeleccionado.Size = new Size(140, 23);
             btnEditarSeleccionado.TabIndex = 8;
@@ -116,12 +121,26 @@
             btnEditarSeleccionado.UseVisualStyleBackColor = true;
             btnEditarSeleccionado.Click += btnEditarSeleccionado_Click;
             // 
+            // btnAtras
+            // 
+            btnAtras.BackgroundImage = (Image)resources.GetObject("btnAtras.BackgroundImage");
+            btnAtras.BackgroundImageLayout = ImageLayout.Stretch;
+            btnAtras.Location = new Point(55, 401);
+            btnAtras.Name = "btnAtras";
+            btnAtras.Size = new Size(26, 23);
+            btnAtras.TabIndex = 9;
+            btnAtras.UseVisualStyleBackColor = true;
+            btnAtras.Click += btnAtras_Click;
+            // 
             // frmEstudiantes
             // 
             AcceptButton = btnAgregarNuevo;
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
+            BackgroundImage = (Image)resources.GetObject("$this.BackgroundImage");
+            BackgroundImageLayout = ImageLayout.Stretch;
             ClientSize = new Size(471, 480);
+            Controls.Add(btnAtras);
             Controls.Add(btnEditarSeleccionado);
             Controls.Add(btnLimpiarLista);
             Controls.Add(lblCantidad);
@@ -148,5 +167,6 @@
         private Label lblCantidad;
         private Button btnLimpiarLista;
         private Button btnEditarSeleccionado;
+        private Button btnAtras;
     }
 }

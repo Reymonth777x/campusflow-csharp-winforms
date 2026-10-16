@@ -29,10 +29,10 @@ namespace AplicaciónEscritorioEjercicio1
             if (respuesta == DialogResult.Yes)
             {
                 //Cierra el formulario donde está ubicado el control
-                this.Close();
+                //this.Close();
 
                 //Cierra toda la aplicación
-                //Application.Exit();
+                Application.Exit();
             }
             }
 

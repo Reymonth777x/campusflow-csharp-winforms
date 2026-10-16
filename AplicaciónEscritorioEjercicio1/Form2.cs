@@ -211,5 +211,10 @@ namespace AplicaciónEscritorioEjercicio1
             MessageBox.Show("Estudiante actualizado correctamente.");
 
         }
+
+        private void btnAtras_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
     }
 }

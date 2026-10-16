@@ -38,18 +38,18 @@
             btnAceptar.BackColor = Color.Navy;
             btnAceptar.Font = new Font("Yu Gothic", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
             btnAceptar.ForeColor = Color.DeepSkyBlue;
-            btnAceptar.Location = new Point(236, 387);
+            btnAceptar.Location = new Point(228, 332);
             btnAceptar.Name = "btnAceptar";
-            btnAceptar.Size = new Size(119, 56);
+            btnAceptar.Size = new Size(202, 52);
             btnAceptar.TabIndex = 0;
-            btnAceptar.Text = "Aceptar";
+            btnAceptar.Text = "Lista Estudiantes";
             btnAceptar.UseVisualStyleBackColor = false;
             btnAceptar.Click += btnAceptar_Click_1;
             // 
             // btnSalir
             // 
             btnSalir.BackColor = Color.DarkRed;
-            btnSalir.Location = new Point(359, 445);
+            btnSalir.Location = new Point(266, 390);
             btnSalir.Name = "btnSalir";
             btnSalir.Size = new Size(106, 34);
             btnSalir.TabIndex = 1;
@@ -64,7 +64,7 @@
             BackColor = SystemColors.ActiveCaptionText;
             BackgroundImage = (Image)resources.GetObject("$this.BackgroundImage");
             BackgroundImageLayout = ImageLayout.Stretch;
-            ClientSize = new Size(635, 534);
+            ClientSize = new Size(675, 581);
             Controls.Add(btnSalir);
             Controls.Add(btnAceptar);
             Name = "frmPrincipal";
