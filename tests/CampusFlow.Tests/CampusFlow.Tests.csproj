@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\CampusFlow.Application\CampusFlow.Application.csproj" />
     <ProjectReference Include="..\..\src\CampusFlow.Domain\CampusFlow.Domain.csproj" />
+    <ProjectReference Include="..\..\src\CampusFlow.Infrastructure\CampusFlow.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

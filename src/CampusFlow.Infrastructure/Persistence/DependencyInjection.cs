@@ -1,0 +1,32 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using CampusFlow.Infrastructure.Persistence;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace CampusFlow.Infrastructure;
+
+public static class DependencyInjection
+{
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services, string? rutaBaseDatos = null)
+    {
+        var ruta = rutaBaseDatos ?? DatabasePaths.Default;
+        Directory.CreateDirectory(Path.GetDirectoryName(ruta)!);
+
+        var connectionString = new SqliteConnectionStringBuilder { DataSource = ruta }.ToString();
+
+        services.AddDbContextFactory<CampusFlowDbContext>(o => o.UseSqlite(connectionString));
+
+        return services;
+    }
+
+    public static void MigrarBaseDeDatos(this IServiceProvider services)
+    {
+        var factory = services.GetRequiredService<IDbContextFactory<CampusFlowDbContext>>();
+        using var db = factory.CreateDbContext();
+        db.Database.Migrate();
+    }
+}
