@@ -2,9 +2,6 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace CampusFlow.Domain
-{
-    internal class DomainException
-    {
-    }
-}
+namespace CampusFlow.Domain.Common;
+
+public sealed class DomainException(string message) : Exception(message);

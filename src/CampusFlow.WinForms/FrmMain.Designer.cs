@@ -28,10 +28,17 @@ partial class FrmMain
     /// </summary>
     private void InitializeComponent()
     {
-        components = new System.ComponentModel.Container();
+        SuspendLayout();
+        // 
+        // FrmMain
+        // 
+        AutoScaleDimensions = new SizeF(7F, 15F);
         AutoScaleMode = AutoScaleMode.Font;
         ClientSize = new Size(800, 450);
+        Name = "FrmMain";
         Text = "Form1";
+        Load += FrmMain_Load;
+        ResumeLayout(false);
     }
 
     #endregion
