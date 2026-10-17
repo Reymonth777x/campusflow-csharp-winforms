@@ -1,7 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Text;
+using CampusFlow.Application.Abstractions;
 using CampusFlow.Infrastructure.Persistence;
+using CampusFlow.Infrastructure.Persistence.Repositories;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +19,9 @@ public static class DependencyInjection
         var connectionString = new SqliteConnectionStringBuilder { DataSource = ruta }.ToString();
 
         services.AddDbContextFactory<CampusFlowDbContext>(o => o.UseSqlite(connectionString));
+
+        // Aquí registramos nuestro repositorio para que la aplicación lo reconozca
+        services.AddSingleton<IEstudianteRepository, EstudianteRepository>();
 
         return services;
     }
