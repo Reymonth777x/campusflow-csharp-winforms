@@ -3,6 +3,7 @@ using CampusFlow.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using WinFormsApp = System.Windows.Forms.Application;
+using CampusFlow.WinForms.Estudiantes;
 
 namespace CampusFlow.WinForms;
 
@@ -31,6 +32,9 @@ internal static class Program
         services.AddApplication();
         services.AddInfrastructure();
         services.AddTransient<FrmMain>();
+        services.AddTransient<FrmEstudiantes>();
+        services.AddTransient<FrmEstudianteDetalle>();
+
     }
 
     private static void HandleFatal(Exception? ex)

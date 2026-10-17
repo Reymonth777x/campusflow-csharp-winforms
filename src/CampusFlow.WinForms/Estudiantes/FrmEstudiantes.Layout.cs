@@ -1,165 +1,142 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using CampusFlow.Application.Estudiantes;
-using CampusFlow.Domain.Enums;
+using CampusFlow.Domain.Entities;
 using CampusFlow.WinForms.Common;
 
 namespace CampusFlow.WinForms.Estudiantes;
 
-/// <summary>
-/// Definición visual de FrmEstudiantes. Todo usa Dock/Anchor/TableLayoutPanel (nunca coordenadas fijas),
-/// por eso la ventana se adapta al redimensionarla y a distintos DPI.
-/// </summary>
-public sealed partial class FrmEstudiantes
+/// <summary>Definición visual del modal de alta/edición.</summary>
+public sealed partial class FrmEstudianteDetalle
 {
+    private readonly ErrorProvider errValidacion = new();
     private readonly TableLayoutPanel tlpPrincipal = new();
-    private readonly FlowLayoutPanel flpFiltros = new();
-    private readonly TextBox txtFiltro = new();
-    private readonly Label lblEstado = new();
-    private readonly ComboBox cmbEstado = new();
-    private readonly Button btnBuscar = new();
-    private readonly DataGridView dgvEstudiantes = new();
-    private readonly TableLayoutPanel tlpAcciones = new();
-    private readonly FlowLayoutPanel flpAcciones = new();
-    private readonly Button btnNuevo = new();
-    private readonly Button btnEditar = new();
-    private readonly Button btnCambiarEstado = new();
-    private readonly Label lblResumen = new();
+    private readonly TableLayoutPanel tlpCampos = new();
+    private readonly FlowLayoutPanel flpBotones = new();
+
+    private readonly Label lblIdentificacion = new();
+    private readonly Label lblNombre = new();
+    private readonly Label lblApellidos = new();
+    private readonly Label lblCorreo = new();
+    private readonly Label lblFechaIngreso = new();
+    private readonly Label lblNota = new();
+
+    private readonly TextBox txtIdentificacion = new();
+    private readonly TextBox txtNombre = new();
+    private readonly TextBox txtApellidos = new();
+    private readonly TextBox txtCorreo = new();
+    private readonly DateTimePicker dtpFechaIngreso = new();
+
+    private readonly Button btnGuardar = new();
+    private readonly Button btnCancelar = new();
 
     private void ConstruirInterfaz()
     {
-        SuspendLayout(); // evita recalcular el layout con cada control agregado
+        SuspendLayout();
 
         AutoScaleDimensions = new SizeF(96F, 96F);
         AutoScaleMode = AutoScaleMode.Dpi;
         Font = Tema.Fuente;
         BackColor = Tema.Fondo;
         ForeColor = Tema.Texto;
-        Text = "CampusFlow – Estudiantes";
+        FormBorderStyle = FormBorderStyle.FixedDialog; // un modal no se redimensiona
+        MaximizeBox = false;
+        MinimizeBox = false;
+        ShowInTaskbar = false;
         StartPosition = FormStartPosition.CenterParent;
-        ClientSize = new Size(900, 560);
-        MinimumSize = new Size(720, 420);
+        ClientSize = new Size(520, 360);
 
-        // Filtros: texto libre + estado + botón buscar.
-        txtFiltro.Name = "txtFiltro";
-        txtFiltro.Width = 340;
-        txtFiltro.PlaceholderText = "Buscar por identificación, nombre, apellidos o correo";
-        txtFiltro.Margin = new Padding(0, 4, 16, 4);
+        // Enter = Guardar, Esc = Cancelar (comportamiento estándar de un diálogo).
+        AcceptButton = btnGuardar;
+        CancelButton = btnCancelar;
 
-        lblEstado.Name = "lblEstado";
-        lblEstado.Text = "Estado:";
-        lblEstado.AutoSize = true;
-        lblEstado.Margin = new Padding(0, 8, 6, 0);
+        // El icono de error se dibuja a la derecha del control: la 3.ª columna de la tabla le reserva ese espacio.
+        errValidacion.ContainerControl = this;
+        errValidacion.BlinkStyle = ErrorBlinkStyle.NeverBlink;
 
-        cmbEstado.Name = "cmbEstado";
-        cmbEstado.DropDownStyle = ComboBoxStyle.DropDownList;
-        cmbEstado.Width = 120;
-        cmbEstado.Margin = new Padding(0, 4, 16, 4);
-        cmbEstado.DisplayMember = nameof(OpcionEstado.Texto);
-        cmbEstado.DataSource = new List<OpcionEstado>
-        {
-            new("Todos", null),
-            new("Activos", EstadoEstudiante.Activo),
-            new("Inactivos", EstadoEstudiante.Inactivo)
-        };
+        // Los límites salen del dominio: la UI no deja escribir más de lo que la entidad aceptaría.
+        txtIdentificacion.Name = "txtIdentificacion";
+        txtIdentificacion.MaxLength = Estudiante.MaxIdentificacion;
+        txtNombre.Name = "txtNombre";
+        txtNombre.MaxLength = Estudiante.MaxNombre;
+        txtApellidos.Name = "txtApellidos";
+        txtApellidos.MaxLength = Estudiante.MaxApellidos;
+        txtCorreo.Name = "txtCorreo";
+        txtCorreo.MaxLength = Estudiante.MaxCorreo;
 
-        btnBuscar.Name = "btnBuscar";
-        btnBuscar.Text = "Buscar";
-        Tema.EstilizarBoton(btnBuscar, primario: true);
+        dtpFechaIngreso.Name = "dtpFechaIngreso";
+        dtpFechaIngreso.Format = DateTimePickerFormat.Short;
+        dtpFechaIngreso.MinDate = new DateTime(1900, 1, 1); // mismo mínimo que CrearEstudianteValidator
 
-        flpFiltros.Dock = DockStyle.Fill;
-        flpFiltros.AutoSize = true;
-        flpFiltros.WrapContents = false;
-        flpFiltros.Controls.AddRange([txtFiltro, lblEstado, cmbEstado, btnBuscar]);
+        tlpCampos.Dock = DockStyle.Fill;
+        tlpCampos.AutoSize = true;
+        tlpCampos.ColumnCount = 3;
+        tlpCampos.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));          // etiquetas
+        tlpCampos.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));     // campos
+        tlpCampos.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 28F));     // icono de error
+        tlpCampos.RowCount = 6;
+        for (var i = 0; i < 6; i++) tlpCampos.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
-        ConfigurarGrid();
+        AgregarCampo(0, lblIdentificacion, "Identificación", txtIdentificacion);
+        AgregarCampo(1, lblNombre, "Nombre", txtNombre);
+        AgregarCampo(2, lblApellidos, "Apellidos", txtApellidos);
+        AgregarCampo(3, lblCorreo, "Correo", txtCorreo);
+        AgregarCampo(4, lblFechaIngreso, "Fecha de ingreso", dtpFechaIngreso);
 
-        // Acciones sobre la fila seleccionada.
-        btnNuevo.Name = "btnNuevo";
-        btnNuevo.Text = "Nuevo";
-        Tema.EstilizarBoton(btnNuevo, primario: true);
+        // Aviso visible solo en edición (ver Cargar).
+        lblNota.Name = "lblNota";
+        lblNota.Text = "La identificación y la fecha de ingreso no se pueden modificar.";
+        lblNota.AutoSize = true;
+        lblNota.ForeColor = Tema.TextoAtenuado;
+        lblNota.Margin = new Padding(0, 8, 0, 0);
+        lblNota.Visible = false;
+        tlpCampos.Controls.Add(lblNota, 0, 5);
+        tlpCampos.SetColumnSpan(lblNota, 3);
 
-        btnEditar.Name = "btnEditar";
-        btnEditar.Text = "Editar";
-        Tema.EstilizarBoton(btnEditar, primario: false);
+        btnGuardar.Name = "btnGuardar";
+        btnGuardar.Text = "Guardar";
+        Tema.EstilizarBoton(btnGuardar, primario: true);
 
-        btnCambiarEstado.Name = "btnCambiarEstado";
-        btnCambiarEstado.Text = "Desactivar";
-        Tema.EstilizarBoton(btnCambiarEstado, primario: false);
+        btnCancelar.Name = "btnCancelar";
+        btnCancelar.Text = "Cancelar";
+        btnCancelar.DialogResult = DialogResult.Cancel; // cierra el modal sin código adicional
+        Tema.EstilizarBoton(btnCancelar, primario: false);
 
-        flpAcciones.AutoSize = true;
-        flpAcciones.Dock = DockStyle.Fill;
-        flpAcciones.Controls.AddRange([btnNuevo, btnEditar, btnCambiarEstado]);
+        // RightToLeft: el primer botón agregado queda más a la derecha.
+        flpBotones.Dock = DockStyle.Fill;
+        flpBotones.AutoSize = true;
+        flpBotones.FlowDirection = FlowDirection.RightToLeft;
+        flpBotones.Controls.Add(btnGuardar);
+        flpBotones.Controls.Add(btnCancelar);
 
-        lblResumen.Name = "lblResumen";
-        lblResumen.AutoSize = true;
-        lblResumen.Anchor = AnchorStyles.Right;
-        lblResumen.ForeColor = Tema.TextoAtenuado;
-
-        tlpAcciones.Dock = DockStyle.Fill;
-        tlpAcciones.AutoSize = true;
-        tlpAcciones.ColumnCount = 2;
-        tlpAcciones.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        tlpAcciones.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        tlpAcciones.Controls.Add(flpAcciones, 0, 0);
-        tlpAcciones.Controls.Add(lblResumen, 1, 0);
-
-        // Contenedor raíz: filtros (alto automático) / grilla (ocupa el resto) / acciones (alto automático).
+        // Raíz: campos (ocupan el espacio) / botones (alto automático).
         tlpPrincipal.Dock = DockStyle.Fill;
-        tlpPrincipal.Padding = new Padding(16);
+        tlpPrincipal.Padding = new Padding(24);
         tlpPrincipal.ColumnCount = 1;
         tlpPrincipal.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        tlpPrincipal.RowCount = 3;
-        tlpPrincipal.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        tlpPrincipal.RowCount = 2;
         tlpPrincipal.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
         tlpPrincipal.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        tlpPrincipal.Controls.Add(flpFiltros, 0, 0);
-        tlpPrincipal.Controls.Add(dgvEstudiantes, 0, 1);
-        tlpPrincipal.Controls.Add(tlpAcciones, 0, 2);
+        tlpPrincipal.Controls.Add(tlpCampos, 0, 0);
+        tlpPrincipal.Controls.Add(flpBotones, 0, 1);
 
         Controls.Add(tlpPrincipal);
         ResumeLayout(performLayout: true);
     }
 
-    private void ConfigurarGrid()
+    /// <summary>Coloca etiqueta + control en una fila de la tabla.</summary>
+    private void AgregarCampo(int fila, Label etiqueta, string texto, Control control)
     {
-        Tema.EstilizarGrid(dgvEstudiantes);
+        etiqueta.Name = "lbl" + control.Name[3..]; // txtNombre → lblNombre (nombre sin su prefijo de 3 letras)
+        etiqueta.Text = texto;
+        etiqueta.AutoSize = true;
+        etiqueta.Anchor = AnchorStyles.Left;
+        etiqueta.Margin = new Padding(0, 0, 16, 0);
 
-        dgvEstudiantes.Name = "dgvEstudiantes";
-        dgvEstudiantes.Dock = DockStyle.Fill;
-        dgvEstudiantes.Margin = new Padding(0, 8, 0, 8);
+        control.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+        control.Margin = new Padding(0, 8, 0, 8);
 
-        // Columnas explícitas: control total del orden, títulos y formato. Sin autogeneración,
-        // un campo nuevo en el DTO no aparecería "de sorpresa" en la pantalla.
-        dgvEstudiantes.AutoGenerateColumns = false;
-        dgvEstudiantes.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-
-        // Solo lectura: toda modificación pasa por el formulario de detalle y el servicio.
-        dgvEstudiantes.ReadOnly = true;
-        dgvEstudiantes.AllowUserToAddRows = false;
-        dgvEstudiantes.AllowUserToDeleteRows = false; // la tecla Supr no debe quitar filas de la lista
-        dgvEstudiantes.AllowUserToResizeRows = false;
-        dgvEstudiantes.MultiSelect = false;
-        dgvEstudiantes.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-
-        dgvEstudiantes.Columns.AddRange(
-            Columna(nameof(EstudianteDto.Identificacion), "Identificación", 16),
-            Columna(nameof(EstudianteDto.NombreCompleto), "Nombre completo", 30),
-            Columna(nameof(EstudianteDto.Correo), "Correo", 28),
-            Columna(nameof(EstudianteDto.FechaIngreso), "Ingreso", 12, "d"),
-            Columna(nameof(EstudianteDto.Estado), "Estado", 10));
+        tlpCampos.Controls.Add(etiqueta, 0, fila);
+        tlpCampos.Controls.Add(control, 1, fila);
     }
-
-    /// <summary>Crea una columna de texto enlazada a una propiedad del DTO (peso = ancho relativo).</summary>
-    private static DataGridViewTextBoxColumn Columna(
-        string propiedad, string encabezado, float peso, string formato = "") =>
-        new()
-        {
-            Name = "col" + propiedad,
-            DataPropertyName = propiedad,
-            HeaderText = encabezado,
-            FillWeight = peso,
-            DefaultCellStyle = { Format = formato }
-        };
 }

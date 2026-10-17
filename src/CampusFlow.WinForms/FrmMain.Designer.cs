@@ -36,8 +36,7 @@ partial class FrmMain
         AutoScaleMode = AutoScaleMode.Font;
         ClientSize = new Size(800, 450);
         Name = "FrmMain";
-        Text = "Form1";
-        Load += FrmMain_Load;
+        Text = "CampusFlow";
         ResumeLayout(false);
     }
 
