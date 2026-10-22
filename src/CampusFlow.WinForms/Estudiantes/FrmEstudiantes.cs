@@ -6,6 +6,7 @@ using CampusFlow.Application.Estudiantes;
 using CampusFlow.Domain.Enums;
 using CampusFlow.WinForms.Common;
 using Microsoft.Extensions.DependencyInjection;
+using CampusFlow.Application.Autenticacion;
 
 namespace CampusFlow.WinForms.Estudiantes;
 
@@ -23,6 +24,8 @@ public sealed partial class FrmEstudiantes : Form
 
     private readonly IEstudianteService _servicio;
     private readonly IServiceScopeFactory _scopeFactory;
+    // Calculado una vez: el rol no cambia durante la vida de esta ventana.
+    private readonly bool _puedeEscribir;
 
     // Se cancela al cerrar el formulario: aborta consultas en vuelo para no tocar una UI que ya no existe.
     private readonly CancellationTokenSource _ctsFormulario = new();
@@ -33,12 +36,23 @@ public sealed partial class FrmEstudiantes : Form
     // true mientras corre una escritura (cambio de estado): evita dobles clics.
     private bool _ocupado;
 
-    public FrmEstudiantes(IEstudianteService servicio, IServiceScopeFactory scopeFactory)
+    public FrmEstudiantes(IEstudianteService servicio, IServiceScopeFactory scopeFactory, ISesionUsuario sesion)
     {
         _servicio = servicio;
         _scopeFactory = scopeFactory;
+        _puedeEscribir = sesion.PuedeEscribirEstudiantes();
 
         ConstruirInterfaz(); // controles y layout (ver FrmEstudiantes.Layout.cs)
+
+        // Rol de solo lectura (Consulta): los botones de escritura ni se muestran. Es comodidad de UI;
+        // la autorización real la aplica EstudianteService.
+        if (!_puedeEscribir)
+        {
+            btnNuevo.Visible = false;
+            btnEditar.Visible = false;
+            btnCambiarEstado.Visible = false;
+        }
+
         ConectarEventos();   // se enlazan DESPUÉS de construir: así los DataSource iniciales no disparan búsquedas
         ActualizarBotones();
     }
@@ -186,7 +200,7 @@ public sealed partial class FrmEstudiantes : Form
 
     private async Task EditarSeleccionadoAsync()
     {
-        if (_ocupado) return;
+        if (_ocupado || !_puedeEscribir) return;
 
         if (ObtenerSeleccionado() is { } seleccionado)
             await AbrirDetalleAsync(seleccionado);
@@ -195,6 +209,8 @@ public sealed partial class FrmEstudiantes : Form
     /// <summary>Abre el modal de alta (existente = null) o edición, y recarga si se guardó.</summary>
     private async Task AbrirDetalleAsync(EstudianteDto? existente)
     {
+        if (!_puedeEscribir) return;
+
         // Scope propio: al salir del using, el contenedor desecha el formulario de detalle.
         using var scope = _scopeFactory.CreateScope();
         var detalle = scope.ServiceProvider.GetRequiredService<FrmEstudianteDetalle>();
@@ -210,7 +226,7 @@ public sealed partial class FrmEstudiantes : Form
     /// <summary>Soft-delete: alterna Activo/Inactivo. Nunca se borra físicamente (hay historial académico).</summary>
     private async Task CambiarEstadoAsync()
     {
-        if (_ocupado || ObtenerSeleccionado() is not { } seleccionado) return;
+        if (_ocupado || !_puedeEscribir || ObtenerSeleccionado() is not { } seleccionado) return;
 
         var desactivar = seleccionado.Estado == EstadoEstudiante.Activo;
 
