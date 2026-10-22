@@ -59,6 +59,56 @@ namespace CampusFlow.Infrastructure.Persistence.Migrations
 
                     b.ToTable("Estudiantes", (string)null);
                 });
+
+            modelBuilder.Entity("CampusFlow.Domain.Entities.Usuario", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset?>("BloqueadoHasta")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("FechaCreacion")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("IntentosFallidos")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("NombreCompleto")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NombreUsuario")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Rol")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("UltimoAcceso")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NombreUsuario")
+                        .IsUnique();
+
+                    b.ToTable("Usuarios", (string)null);
+                });
 #pragma warning restore 612, 618
         }
     }

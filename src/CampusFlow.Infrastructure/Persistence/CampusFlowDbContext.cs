@@ -10,6 +10,7 @@ public sealed class CampusFlowDbContext(DbContextOptions<CampusFlowDbContext> op
     : DbContext(options)
 {
     public DbSet<Estudiante> Estudiantes => Set<Estudiante>();
+    public DbSet<Usuario> Usuarios => Set<Usuario>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

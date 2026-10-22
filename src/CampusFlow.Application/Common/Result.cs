@@ -4,7 +4,7 @@ using System.Text;
 
 namespace CampusFlow.Application.Common;
 
-public enum TipoError { Validacion, NoEncontrado, Conflicto }
+public enum TipoError { Validacion, NoEncontrado, Conflicto, NoAutorizado }
 
 public sealed record Error(TipoError Tipo, string Mensaje, string? Campo = null);
 

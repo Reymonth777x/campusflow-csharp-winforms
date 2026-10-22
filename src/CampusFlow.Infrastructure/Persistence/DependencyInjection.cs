@@ -1,7 +1,7 @@
-﻿using System.Text;
-using CampusFlow.Application.Abstractions;
+﻿using CampusFlow.Application.Abstractions;
 using CampusFlow.Infrastructure.Persistence;
 using CampusFlow.Infrastructure.Persistence.Repositories;
+using CampusFlow.Infrastructure.Security;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,8 +20,11 @@ public static class DependencyInjection
 
         services.AddDbContextFactory<CampusFlowDbContext>(o => o.UseSqlite(connectionString));
 
-        // Aquí registramos nuestro repositorio para que la aplicación lo reconozca
         services.AddSingleton<IEstudianteRepository, EstudianteRepository>();
+        services.AddSingleton<IUsuarioRepository, UsuarioRepository>();
+
+        // Con factory explícita: el hasher recibe sus iteraciones por defecto sin depender de cómo el contenedor trata parámetros opcionales.
+        services.AddSingleton<IPasswordHasher>(_ => new Pbkdf2PasswordHasher());
 
         return services;
     }
