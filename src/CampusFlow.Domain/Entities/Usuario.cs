@@ -105,6 +105,16 @@ public sealed class Usuario : Entity
         Rol = rol;
     }
 
+    public void CambiarNombreCompleto(string? nombreCompleto) =>
+        NombreCompleto = Guard.Requerido(nombreCompleto, "El nombre completo", MaxNombreCompleto);
+
+    /// <summary>Quita el bloqueo y reinicia el contador. Lo usa el restablecimiento de contraseña.</summary>
+    public void Desbloquear()
+    {
+        IntentosFallidos = 0;
+        BloqueadoHasta = null;
+    }
+
     public void Desactivar() => Activo = false;
 
     public void Activar() => Activo = true;

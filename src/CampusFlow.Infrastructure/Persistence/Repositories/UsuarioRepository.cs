@@ -2,6 +2,8 @@
 using CampusFlow.Domain.Entities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using CampusFlow.Domain.Enums;
+
 
 namespace CampusFlow.Infrastructure.Persistence.Repositories;
 
@@ -15,6 +17,25 @@ public sealed class UsuarioRepository(IDbContextFactory<CampusFlowDbContext> fab
 
         // La columna es COLLATE NOCASE: la comparación ya ignora mayúsculas.
         return await db.Usuarios.AsNoTracking().FirstOrDefaultAsync(u => u.NombreUsuario == nombreUsuario, ct);
+    }
+    public async Task<Usuario?> ObtenerPorIdAsync(int id, CancellationToken ct = default)
+    {
+        await using var db = await fabrica.CreateDbContextAsync(ct);
+        return await db.Usuarios.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id, ct);
+    }
+
+    public async Task<IReadOnlyList<Usuario>> ListarAsync(CancellationToken ct = default)
+    {
+        await using var db = await fabrica.CreateDbContextAsync(ct);
+
+        // La columna es NOCASE: el orden ignora mayúsculas ("admin" y "Beta" quedan juntos en orden natural).
+        return await db.Usuarios.AsNoTracking().OrderBy(u => u.NombreUsuario).ToListAsync(ct);
+    }
+
+    public async Task<int> ContarAdministradoresActivosAsync(CancellationToken ct = default)
+    {
+        await using var db = await fabrica.CreateDbContextAsync(ct);
+        return await db.Usuarios.CountAsync(u => u.Rol == RolUsuario.Administrador && u.Activo, ct);
     }
 
     public async Task<bool> HayUsuariosAsync(CancellationToken ct = default)

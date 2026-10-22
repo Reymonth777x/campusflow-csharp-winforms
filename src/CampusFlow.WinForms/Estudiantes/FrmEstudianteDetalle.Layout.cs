@@ -4,6 +4,7 @@ using System.Text;
 using CampusFlow.Application.Estudiantes;
 using CampusFlow.Domain.Enums;
 using CampusFlow.WinForms.Common;
+using System.ComponentModel;
 
 namespace CampusFlow.WinForms.Estudiantes;
 
@@ -11,6 +12,8 @@ namespace CampusFlow.WinForms.Estudiantes;
 /// Definición visual de FrmEstudiantes. Todo usa Dock/Anchor/TableLayoutPanel (nunca coordenadas fijas),
 /// por eso la ventana se adapta al redimensionarla y a distintos DPI.
 /// </summary>
+/// 
+[DesignerCategory("Code")]
 public sealed partial class FrmEstudiantes
 {
     private readonly TableLayoutPanel tlpPrincipal = new();

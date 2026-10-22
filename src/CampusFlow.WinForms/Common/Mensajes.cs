@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+
 namespace CampusFlow.WinForms.Common;
 
 /// <summary>
@@ -18,4 +19,7 @@ internal static class Mensajes
     public static bool Confirmar(IWin32Window? dueno, string texto) =>
         MessageBox.Show(dueno, texto, Titulo, MessageBoxButtons.YesNo,
             MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+
+    public static void Informacion(IWin32Window? dueno, string texto) =>
+        MessageBox.Show(dueno, texto, Titulo, MessageBoxButtons.OK, MessageBoxIcon.Information);
 }

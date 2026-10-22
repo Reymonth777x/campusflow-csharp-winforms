@@ -11,4 +11,8 @@ public static class Politicas
     /// <summary>Crear, editar y activar/desactivar estudiantes. El rol Consulta queda como solo lectura.</summary>
     public static bool PuedeEscribirEstudiantes(this ISesionUsuario sesion) =>
         sesion.TieneRol(RolUsuario.Administrador, RolUsuario.Docente);
+
+    /// <summary>Gestión de cuentas de usuario: exclusiva del Administrador.</summary>
+    public static bool PuedeGestionarUsuarios(this ISesionUsuario sesion) =>
+        sesion.TieneRol(RolUsuario.Administrador);
 }

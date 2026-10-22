@@ -4,6 +4,7 @@ using CampusFlow.Application.Estudiantes.Validators;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using CampusFlow.Application.Usuarios;
 
 namespace CampusFlow.Application;
 
@@ -21,6 +22,7 @@ public static class DependencyInjection
 
         services.AddTransient<IEstudianteService, EstudianteService>();
         services.AddTransient<IAuthService, AuthService>();
+        services.AddTransient<IUsuarioService, UsuarioService>();
         return services;
     }
 }

@@ -4,6 +4,7 @@ using System.Text;
 using CampusFlow.Application.Common;
 using CampusFlow.Application.Estudiantes;
 using CampusFlow.WinForms.Common;
+using System.ComponentModel;
 
 namespace CampusFlow.WinForms.Estudiantes;
 
@@ -12,6 +13,8 @@ namespace CampusFlow.WinForms.Estudiantes;
 /// <see cref="ActualizarEstudianteRequest"/> y muestra los errores del <c>Result</c> junto al
 /// campo correspondiente mediante ErrorProvider.
 /// </summary>
+/// 
+[DesignerCategory("Code")]
 public sealed partial class FrmEstudianteDetalle : Form
 {
     private readonly IEstudianteService _servicio;
