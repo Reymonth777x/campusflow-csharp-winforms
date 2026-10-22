@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using CampusFlow.Application.Common;
+﻿using CampusFlow.Application.Common;
 
 namespace CampusFlow.Application.Autenticacion;
 
@@ -18,4 +15,10 @@ public interface IAuthService
     /// <summary>Crea el primer administrador. Solo funciona mientras no exista ningún usuario.</summary>
     Task<Result<UsuarioDto>> RegistrarAdministradorInicialAsync(
         CrearAdministradorInicialRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Cambia la contraseña del usuario de la sesión actual (exige la contraseña vigente). Funciona
+    /// también con una sesión pendiente de cambio, y al terminar deja la sesión habilitada.
+    /// </summary>
+    Task<Result> CambiarPasswordAsync(CambiarPasswordRequest request, CancellationToken ct = default);
 }

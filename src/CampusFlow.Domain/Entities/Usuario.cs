@@ -47,6 +47,11 @@ public sealed class Usuario : Entity
         Activo = true;
         FechaCreacion = ahora;
     }
+    /// <summary>
+    /// true cuando la contraseña actual la eligió un administrador (alta o restablecimiento): la persona
+    /// debe cambiarla por una propia antes de usar el sistema.
+    /// </summary>
+    public bool DebeCambiarPassword { get; private set; }
 
     /// <summary>
     /// Recibe el HASH ya calculado: el dominio no conoce la contraseña en claro ni cómo se hashea.
@@ -95,10 +100,22 @@ public sealed class Usuario : Entity
         BloqueadoHasta = null;
         UltimoAcceso = ahora;
     }
+    public void ExigirCambioDePassword() => DebeCambiarPassword = true;
 
-    public void CambiarPasswordHash(string? nuevoHash) =>
+    /// <summary>Contraseña asignada por un administrador: es temporal, la persona deberá cambiarla al ingresar.</summary>
+    public void AsignarPasswordTemporal(string? nuevoHash)
+    {
+        // Se valida ANTES de asignar: si el hash es inválido, la entidad no queda a medias.
         PasswordHash = Guard.Requerido(nuevoHash, "El hash de la contraseña", MaxPasswordHash);
+        DebeCambiarPassword = true;
+    }
 
+    /// <summary>Contraseña elegida por la propia persona: se levanta la exigencia de cambio.</summary>
+    public void EstablecerPasswordPropia(string? nuevoHash)
+    {
+        PasswordHash = Guard.Requerido(nuevoHash, "El hash de la contraseña", MaxPasswordHash);
+        DebeCambiarPassword = false;
+    }
     public void CambiarRol(RolUsuario rol)
     {
         if (!Enum.IsDefined(rol)) throw new DomainException("El rol no es válido.");

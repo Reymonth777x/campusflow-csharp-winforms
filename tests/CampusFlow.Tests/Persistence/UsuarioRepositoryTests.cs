@@ -95,5 +95,20 @@ public sealed class UsuarioRepositoryTests : IDisposable
         Assert.Equal(Ahora + Usuario.DuracionBloqueo, releido.BloqueadoHasta!.Value);
     }
 
+    [Fact]
+    public async Task DebeCambiarPassword_nace_en_false_y_se_persiste_al_activarse()
+    {
+        await _repo.AgregarAsync(Crear());
+
+        var nuevo = (await _repo.ObtenerPorNombreAsync("jperez"))!;
+        Assert.False(nuevo.DebeCambiarPassword);
+
+        nuevo.ExigirCambioDePassword();
+        await _repo.ActualizarAsync(nuevo);
+
+        var releido = (await _repo.ObtenerPorNombreAsync("jperez"))!;
+        Assert.True(releido.DebeCambiarPassword);
+    }
+
     public void Dispose() => _conexion.Dispose();
 }

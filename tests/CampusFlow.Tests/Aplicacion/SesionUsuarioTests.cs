@@ -8,6 +8,9 @@ public class SesionUsuarioTests
 {
     private static UsuarioDto Con(RolUsuario rol) => new(1, "usuario", "Usuario de Prueba", rol, true);
 
+    private static UsuarioDto ConCambioPendiente(RolUsuario rol) =>
+        new(1, "usuario", "Usuario de Prueba", rol, true, DebeCambiarPassword: true);
+
     [Fact]
     public void Sin_sesion_no_esta_autenticado_y_ningun_rol_coincide()
     {
@@ -57,4 +60,42 @@ public class SesionUsuarioTests
     [Fact]
     public void Sin_sesion_nadie_puede_escribir_estudiantes() =>
         Assert.False(new SesionUsuario().PuedeEscribirEstudiantes());
+
+    [Fact]
+    public void Sesion_con_cambio_pendiente_no_esta_autenticada_ni_tiene_roles_ni_permisos()
+    {
+        var sesion = new SesionUsuario();
+
+        sesion.Iniciar(ConCambioPendiente(RolUsuario.Administrador));
+
+        Assert.NotNull(sesion.Actual);              // la sesión existe: hace falta para cambiar la contraseña
+        Assert.True(sesion.RequiereCambioDePassword);
+        Assert.False(sesion.EstaAutenticado);
+        Assert.False(sesion.TieneRol(RolUsuario.Administrador));
+        Assert.False(sesion.PuedeEscribirEstudiantes());
+        Assert.False(sesion.PuedeGestionarUsuarios());
+    }
+
+    [Fact]
+    public void Sesion_normal_no_requiere_cambio_de_password()
+    {
+        var sesion = new SesionUsuario();
+
+        sesion.Iniciar(Con(RolUsuario.Docente));
+
+        Assert.False(sesion.RequiereCambioDePassword);
+        Assert.True(sesion.EstaAutenticado);
+    }
+
+    [Fact]
+    public void Reemplazar_la_sesion_pendiente_por_una_resuelta_la_habilita()
+    {
+        var sesion = new SesionUsuario();
+        sesion.Iniciar(ConCambioPendiente(RolUsuario.Docente));
+
+        sesion.Iniciar(Con(RolUsuario.Docente)); // lo que hace AuthService al cambiar la contraseña
+
+        Assert.True(sesion.EstaAutenticado);
+        Assert.False(sesion.RequiereCambioDePassword);
+    }
 }

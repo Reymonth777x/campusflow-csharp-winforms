@@ -72,6 +72,9 @@ namespace CampusFlow.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("BloqueadoHasta")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("DebeCambiarPassword")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTimeOffset>("FechaCreacion")
                         .HasColumnType("TEXT");
 

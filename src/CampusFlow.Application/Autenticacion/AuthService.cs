@@ -16,7 +16,8 @@ public sealed class AuthService(
     ISesionUsuario sesion,
     TimeProvider reloj,
     IValidator<LoginRequest> validadorLogin,
-    IValidator<CrearAdministradorInicialRequest> validadorAdmin) : IAuthService
+    IValidator<CrearAdministradorInicialRequest> validadorAdmin,
+    IValidator<CambiarPasswordRequest> validadorCambio) : IAuthService
 {
     // El MISMO error para "usuario inexistente" y "contraseña incorrecta": no se puede averiguar qué usuarios existen.
     private static readonly Error CredencialesInvalidas =
@@ -24,7 +25,11 @@ public sealed class AuthService(
 
     private static readonly Error CuentaDesactivada =
         new(TipoError.NoAutorizado, "La cuenta está desactivada. Contacte al administrador.");
+    private static readonly Error SinSesion =
+    new(TipoError.NoAutorizado, "Debe iniciar sesión para continuar.");
 
+    private static readonly Error CuentaNoDisponible =
+        new(TipoError.NoAutorizado, "La cuenta ya no está disponible. Contacte al administrador.");
     // Hash de relleno: se calcula solo si hace falta, y sirve para que "usuario inexistente"
     // tarde lo mismo que "contraseña incorrecta" (si no, la diferencia de tiempo delataría qué usuarios existen).
     private readonly Lazy<string> _hashFalso = new(() => hasher.Hash(Guid.NewGuid().ToString("N")));
@@ -76,6 +81,60 @@ public sealed class AuthService(
     }
 
     public void CerrarSesion() => sesion.Cerrar();
+    public async Task<Result> CambiarPasswordAsync(CambiarPasswordRequest request, CancellationToken ct = default)
+    {
+        // Se usa Actual (y no EstaAutenticado) a propósito: una sesión pendiente de cambio de contraseña
+        // no cuenta como autenticada para el resto del sistema, pero SÍ debe poder cambiarla.
+        if (sesion.Actual is not { } actual)
+            return Result.Falla(SinSesion);
+
+        var validacion = await validadorCambio.ValidateAsync(request, ct);
+        if (!validacion.IsValid)
+            return Result.Falla(validacion.ToErrores());
+
+        // Se recarga de la BD: la sesión guarda un DTO sin hash ni contadores, y la cuenta pudo cambiar desde el login.
+        var usuario = await repositorio.ObtenerPorIdAsync(actual.Id, ct);
+        if (usuario is null || !usuario.Activo)
+            return Result.Falla(CuentaNoDisponible);
+
+        var ahora = reloj.GetUtcNow();
+        if (usuario.EstaBloqueado(ahora))
+            return Result.Falla(Bloqueada(usuario.TiempoRestanteDeBloqueo(ahora)));
+
+        // Task.Run: PBKDF2 es CPU intensivo (cientos de ms) y no debe correr en el hilo de la UI.
+        var correcta = await Task.Run(() => hasher.Verify(request.PasswordActual, usuario.PasswordHash), ct);
+
+        if (!correcta)
+        {
+            // Misma política que el login: sin contador, esta pantalla serviría para adivinar contraseñas sin límite.
+            usuario.RegistrarIntentoFallido(ahora);
+
+            // CancellationToken.None a propósito: cerrar la ventana a mitad del intento no debe saltarse el contador.
+            await repositorio.ActualizarAsync(usuario, CancellationToken.None);
+
+            return Result.Falla(usuario.EstaBloqueado(ahora)
+                ? Bloqueada(usuario.TiempoRestanteDeBloqueo(ahora))
+                : new Error(TipoError.Validacion, "La contraseña actual no es correcta.",
+                    nameof(CambiarPasswordRequest.PasswordActual)));
+        }
+
+        // Regla que el validador no puede comprobar porque el request no trae el nombre de usuario.
+        if (string.Equals(request.NuevaPassword, usuario.NombreUsuario, StringComparison.OrdinalIgnoreCase))
+            return Result.Falla(new Error(
+                TipoError.Validacion,
+                "La contraseña no puede ser igual al usuario.",
+                nameof(CambiarPasswordRequest.NuevaPassword)));
+
+        var hash = await Task.Run(() => hasher.Hash(request.NuevaPassword), ct);
+
+        usuario.EstablecerPasswordPropia(hash);
+        usuario.Desbloquear(); // la contraseña actual era correcta: se borran los intentos fallidos acumulados
+        await repositorio.ActualizarAsync(usuario, ct);
+
+        // Refresca la sesión: la bandera pasa a false y desde este momento el usuario queda autenticado de verdad.
+        sesion.Iniciar(usuario.ToDto());
+        return Result.Exito();
+    }
 
     public Task<bool> HayUsuariosAsync(CancellationToken ct = default) => repositorio.HayUsuariosAsync(ct);
 

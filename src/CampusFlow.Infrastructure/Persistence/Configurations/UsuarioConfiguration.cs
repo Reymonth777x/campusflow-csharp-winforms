@@ -29,6 +29,7 @@ public sealed class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
         builder.Property(u => u.Rol).IsRequired().HasConversion<string>().HasMaxLength(20);
 
         builder.Property(u => u.Activo).IsRequired();
+        builder.Property(u => u.DebeCambiarPassword).IsRequired();
         builder.Property(u => u.IntentosFallidos).IsRequired();
         builder.Property(u => u.FechaCreacion).IsRequired();
         // BloqueadoHasta y UltimoAcceso son nulables: sin configuración extra.

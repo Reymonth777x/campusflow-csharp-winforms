@@ -90,6 +90,7 @@ public sealed class UsuarioService(
         {
             var ahora = reloj.GetUtcNow();
             var usuario = Usuario.Crear(request.NombreUsuario, request.NombreCompleto, hash, request.Rol, ahora);
+            usuario.ExigirCambioDePassword(); // la contraseña la eligió el administrador: deberá cambiarla al primer ingreso
 
             await repositorio.AgregarAsync(usuario, ct);
             return Result<UsuarioListadoDto>.Exito(usuario.ToListadoDto(ahora));
@@ -211,7 +212,7 @@ public sealed class UsuarioService(
 
         var hash = await Task.Run(() => hasher.Hash(request.NuevaPassword), ct);
 
-        usuario.CambiarPasswordHash(hash);
+        usuario.AsignarPasswordTemporal(hash); // temporal: la persona deberá cambiarla al ingresar
         usuario.Desbloquear(); // si no, un usuario bloqueado seguiría sin poder entrar aunque tenga clave nueva
         await repositorio.ActualizarAsync(usuario, ct);
         return Result.Exito();

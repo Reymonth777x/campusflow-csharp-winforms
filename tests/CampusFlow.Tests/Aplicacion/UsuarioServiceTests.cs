@@ -348,4 +348,26 @@ public class UsuarioServiceTests
         Assert.True(lista.Single(u => u.NombreUsuario == "zeta").Bloqueado);
         Assert.False(lista.Single(u => u.NombreUsuario == "beta").Bloqueado);
     }
+
+    // ───── Contraseña temporal ─────
+
+    [Fact]
+    public async Task Crear_deja_al_usuario_obligado_a_cambiar_su_contrasena_al_primer_ingreso()
+    {
+        await _servicio.CrearAsync(SolicitudCrear());
+
+        Assert.True(_repo.Todos.Single(u => u.NombreUsuario == "mrojas").DebeCambiarPassword);
+    }
+
+    [Fact]
+    public async Task Restablecer_deja_al_usuario_obligado_a_cambiar_su_contrasena()
+    {
+        var docente = Sembrar("jperez", RolUsuario.Docente);
+        Assert.False(docente.DebeCambiarPassword);
+
+        await _servicio.RestablecerPasswordAsync(
+            new RestablecerPasswordRequest(docente.Id, "NuevaClave2026", "NuevaClave2026"));
+
+        Assert.True(docente.DebeCambiarPassword);
+    }
 }

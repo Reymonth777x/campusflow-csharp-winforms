@@ -22,7 +22,7 @@ public class AuthServiceTests
     {
         _servicio = new AuthService(
             _repo, _hasher, _sesion, _reloj,
-            new LoginValidator(), new CrearAdministradorInicialValidator());
+            new LoginValidator(), new CrearAdministradorInicialValidator(), new CambiarPasswordValidator());
     }
 
     /// <summary>Crea un usuario directamente en el repositorio (sin pasar por el servicio) y devuelve la entidad.</summary>
@@ -225,5 +225,129 @@ public class AuthServiceTests
         var error = Assert.Single(resultado.Errores);
         Assert.Equal(TipoError.Conflicto, error.Tipo);
         Assert.Equal("NombreUsuario", error.Campo);
+    }
+
+    // ───── Cambiar contraseña ─────
+
+    private Task<Result> Cambiar(string actual = Clave, string nueva = "NuevaClave2026", string? confirmar = null) =>
+        _servicio.CambiarPasswordAsync(new CambiarPasswordRequest(actual, nueva, confirmar ?? nueva));
+
+    [Fact]
+    public async Task Login_de_usuario_con_password_temporal_abre_una_sesion_pendiente_de_cambio()
+    {
+        var usuario = await SembrarAsync();
+        usuario.ExigirCambioDePassword();
+
+        var resultado = await Login();
+
+        Assert.True(resultado.EsExito);
+        Assert.True(resultado.Valor.DebeCambiarPassword);
+        Assert.True(_sesion.RequiereCambioDePassword);
+        Assert.False(_sesion.EstaAutenticado); // todavía no puede usar el sistema
+    }
+
+    [Fact]
+    public async Task Cambiar_password_valido_guarda_el_hash_levanta_la_exigencia_y_habilita_la_sesion()
+    {
+        var usuario = await SembrarAsync();
+        usuario.ExigirCambioDePassword();
+        await Login();
+
+        var resultado = await Cambiar();
+
+        Assert.True(resultado.EsExito);
+        Assert.True(_hasher.Verify("NuevaClave2026", usuario.PasswordHash));
+        Assert.False(usuario.DebeCambiarPassword);
+        Assert.True(_sesion.EstaAutenticado);
+        Assert.False(_sesion.RequiereCambioDePassword);
+    }
+
+    [Fact]
+    public async Task Cambiar_con_la_contrasena_actual_incorrecta_falla_en_ese_campo_y_cuenta_el_intento()
+    {
+        var usuario = await SembrarAsync();
+        await Login();
+
+        var resultado = await Cambiar(actual: "incorrecta1");
+
+        var error = Assert.Single(resultado.Errores);
+        Assert.Equal(TipoError.Validacion, error.Tipo);
+        Assert.Equal("PasswordActual", error.Campo);
+        Assert.Equal(1, usuario.IntentosFallidos);
+        Assert.True(_hasher.Verify(Clave, usuario.PasswordHash)); // sigue la contraseña anterior
+    }
+
+    [Fact]
+    public async Task Cinco_fallos_al_cambiar_bloquean_la_cuenta_incluso_con_la_contrasena_correcta()
+    {
+        var usuario = await SembrarAsync();
+        await Login();
+
+        Result ultimo = Result.Exito();
+        for (var i = 0; i < Usuario.MaxIntentosFallidos; i++)
+            ultimo = await Cambiar(actual: "incorrecta1");
+
+        Assert.Contains("bloqueada", ultimo.Errores[0].Mensaje);
+        Assert.True(usuario.EstaBloqueado(_reloj.GetUtcNow()));
+
+        var conLaCorrecta = await Cambiar(); // ahora con la contraseña actual correcta
+
+        Assert.Contains("bloqueada", conLaCorrecta.Errores[0].Mensaje);
+        Assert.True(_hasher.Verify(Clave, usuario.PasswordHash));
+    }
+
+    [Fact]
+    public async Task Cambiar_sin_sesion_devuelve_NoAutorizado()
+    {
+        var resultado = await Cambiar();
+
+        Assert.Equal(TipoError.NoAutorizado, Assert.Single(resultado.Errores).Tipo);
+    }
+
+    [Fact]
+    public async Task Cambiar_con_nueva_contrasena_debil_devuelve_validacion_y_no_cambia_nada()
+    {
+        var usuario = await SembrarAsync();
+        await Login();
+
+        var resultado = await Cambiar(nueva: "corta1");
+
+        Assert.Contains(resultado.Errores, e => e.Tipo == TipoError.Validacion && e.Campo == "NuevaPassword");
+        Assert.True(_hasher.Verify(Clave, usuario.PasswordHash));
+    }
+
+    [Fact]
+    public async Task Cambiar_a_una_contrasena_igual_al_usuario_se_rechaza()
+    {
+        var usuario = await SembrarAsync("jperez2026");
+        await Login("jperez2026");
+
+        var resultado = await Cambiar(nueva: "jperez2026");
+
+        var error = Assert.Single(resultado.Errores);
+        Assert.Equal(TipoError.Validacion, error.Tipo);
+        Assert.Equal("NuevaPassword", error.Campo);
+        Assert.True(_hasher.Verify(Clave, usuario.PasswordHash));
+    }
+
+    [Fact]
+    public async Task Cambiar_si_la_cuenta_se_desactivo_a_mitad_de_sesion_se_rechaza()
+    {
+        var usuario = await SembrarAsync();
+        await Login();
+        usuario.Desactivar();
+
+        var resultado = await Cambiar();
+
+        Assert.Equal(TipoError.NoAutorizado, Assert.Single(resultado.Errores).Tipo);
+        Assert.True(_hasher.Verify(Clave, usuario.PasswordHash));
+    }
+
+    [Fact]
+    public async Task Administrador_inicial_no_queda_obligado_a_cambiar_su_contrasena()
+    {
+        await _servicio.RegistrarAdministradorInicialAsync(SolicitudAdmin());
+
+        Assert.False(Assert.Single(_repo.Todos).DebeCambiarPassword); // eligió su propia contraseña
     }
 }

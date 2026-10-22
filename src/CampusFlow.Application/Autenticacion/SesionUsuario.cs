@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using CampusFlow.Domain.Enums;
+﻿using CampusFlow.Domain.Enums;
 
 namespace CampusFlow.Application.Autenticacion;
 
@@ -13,9 +10,14 @@ public sealed class SesionUsuario : ISesionUsuario
 {
     public UsuarioDto? Actual { get; private set; }
 
-    public bool EstaAutenticado => Actual is not null;
+    // Defensa en profundidad: mientras el cambio de contraseña esté pendiente, ningún servicio
+    // (que consulta EstaAutenticado o TieneRol) atenderá a este usuario, aunque se salte la UI.
+    public bool EstaAutenticado => Actual is { DebeCambiarPassword: false };
 
-    public bool TieneRol(params RolUsuario[] roles) => Actual is { } u && roles.Contains(u.Rol);
+    public bool RequiereCambioDePassword => Actual is { DebeCambiarPassword: true };
+
+    public bool TieneRol(params RolUsuario[] roles) =>
+        Actual is { DebeCambiarPassword: false } usuario && roles.Contains(usuario.Rol);
 
     public void Iniciar(UsuarioDto usuario) => Actual = usuario;
 
