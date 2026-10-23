@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using CampusFlow.Application.Autenticacion;
+using CampusFlow.WinForms.Acceso;
 using CampusFlow.WinForms.Common;
 using CampusFlow.WinForms.Estudiantes;
 using CampusFlow.WinForms.Usuarios;
@@ -8,8 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace CampusFlow.WinForms;
 
 /// <summary>
-/// Ventana principal. Solo existe tras un login válido (ver Program.cs). Muestra quién tiene la sesión,
-/// ofrece los módulos según el rol y permite cerrarla. La navegación completa llega en la Fase 5.
+/// Ventana principal. Solo existe tras un login válido y con la contraseña ya resuelta (ver Program.cs).
+/// Muestra quién tiene la sesión, ofrece los módulos según el rol y permite cambiar la contraseña o cerrar
+/// la sesión. La navegación completa llega en la Fase 5.
 /// </summary>
 [DesignerCategory("Code")] // se abre como código, nunca en el diseñador (evita que Visual Studio cree un .resx)
 public sealed partial class FrmMain : Form
@@ -39,6 +41,7 @@ public sealed partial class FrmMain : Form
 
         btnEstudiantes.Click += btnEstudiantes_Click;
         btnUsuarios.Click += btnUsuarios_Click;
+        btnCambiarPassword.Click += btnCambiarPassword_Click;
         btnCerrarSesion.Click += btnCerrarSesion_Click;
 
         // Cualquier cierre (X o "Cerrar sesión") deja la sesión limpia.
@@ -68,6 +71,16 @@ public sealed partial class FrmMain : Form
 
         // El administrador pudo editar su propio nombre: la sesión ya lo refleja, falta repintar la etiqueta.
         MostrarSesion();
+    }
+
+    private void btnCambiarPassword_Click(object? sender, EventArgs e)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var formulario = scope.ServiceProvider.GetRequiredService<FrmCambiarPassword>();
+        formulario.Cargar(obligatorio: false); // voluntario: se puede cancelar
+
+        if (formulario.ShowDialog(this) == DialogResult.OK)
+            Mensajes.Informacion(this, "Contraseña actualizada correctamente.");
     }
 
     private void btnCerrarSesion_Click(object? sender, EventArgs e)

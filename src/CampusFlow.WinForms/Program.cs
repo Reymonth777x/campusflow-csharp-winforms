@@ -3,10 +3,10 @@ using CampusFlow.Application.Autenticacion;
 using CampusFlow.Infrastructure;
 using CampusFlow.WinForms.Acceso;
 using CampusFlow.WinForms.Estudiantes;
+using CampusFlow.WinForms.Usuarios;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using WinFormsApp = System.Windows.Forms.Application;
-using CampusFlow.WinForms.Usuarios;
 
 namespace CampusFlow.WinForms;
 
@@ -46,14 +46,16 @@ internal static class Program
     }
 
     /// <summary>
-    /// Primer arranque (sin usuarios): crea el administrador. Después, siempre pide login.
-    /// Devuelve true solo si hay una sesión iniciada.
+    /// Primer arranque (sin usuarios): crea el administrador. Después pide login; si la cuenta tiene una
+    /// contraseña temporal, obliga a cambiarla antes de dejar entrar. Devuelve true solo si hay una sesión
+    /// plenamente habilitada; false si la persona canceló el login (la aplicación termina).
     /// </summary>
     private static bool Autenticar(IServiceProvider servicios)
     {
         // Un scope para este ciclo: al terminar se desechan los formularios resueltos.
         using var scope = servicios.CreateScope();
         var auth = scope.ServiceProvider.GetRequiredService<IAuthService>();
+        var sesion = scope.ServiceProvider.GetRequiredService<ISesionUsuario>();
 
         // Task.Run + GetResult: aún no hay ciclo de mensajes. Correr la consulta en el pool (sin contexto de
         // sincronización) evita el interbloqueo que causaría esperar en el hilo de UI una tarea que
@@ -66,8 +68,23 @@ internal static class Program
             if (alta.ShowDialog() != DialogResult.OK) return false; // sin administrador no se puede usar el sistema
         }
 
-        var login = scope.ServiceProvider.GetRequiredService<FrmLogin>();
-        return login.ShowDialog() == DialogResult.OK;
+        // Bucle: si la persona cierra sesión en el cambio obligatorio, vuelve al login sin cerrar la aplicación.
+        while (true)
+        {
+            var login = scope.ServiceProvider.GetRequiredService<FrmLogin>();
+            if (login.ShowDialog() != DialogResult.OK) return false;
+
+            // Cuenta normal: entra directo.
+            if (!sesion.RequiereCambioDePassword) return true;
+
+            // Contraseña temporal: hasta que no elija una propia, la sesión no cuenta como autenticada
+            // y ningún servicio la atiende (ver SesionUsuario).
+            var cambio = scope.ServiceProvider.GetRequiredService<FrmCambiarPassword>();
+            cambio.Cargar(obligatorio: true);
+            if (cambio.ShowDialog() == DialogResult.OK) return true;
+
+            auth.CerrarSesion(); // eligió "Cerrar sesión" (o cerró la ventana a la fuerza): de vuelta al login
+        }
     }
 
     private static void ConfigureServices(IServiceCollection services)
@@ -78,6 +95,7 @@ internal static class Program
         services.AddTransient<FrmMain>();
         services.AddTransient<FrmLogin>();
         services.AddTransient<FrmAdministradorInicial>();
+        services.AddTransient<FrmCambiarPassword>();
         services.AddTransient<FrmEstudiantes>();
         services.AddTransient<FrmEstudianteDetalle>();
         services.AddTransient<FrmUsuarios>();
